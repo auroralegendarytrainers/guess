@@ -167,6 +167,17 @@
             <div id="save-feedback" class="mt-2 text-center text-sm font-semibold"></div>
           </div>
 
+          <!-- ✅ Leaderboard -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">🏆 Leaderboard</h3>
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-300">
+              <div id="leaderboard-status" class="text-center text-gray-500 py-2 text-sm"></div>
+              <div id="leaderboard-list" class="space-y-2">
+                <!-- entries inserted here -->
+              </div>
+            </div>
+          </div>
+
           <!-- Detailed Results -->
           <div class="mb-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">Your Answers</h3>
@@ -189,8 +200,9 @@
   </div>
 
   <script>
-    // ✅ Put your Google Apps Script Web App URL here
-    const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
+    // ✅ Your Google Apps Script Web App URL
+    const GOOGLE_SHEETS_WEBAPP_URL =
+      "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
 
     // Game state
     let currentRound = 0;
@@ -205,21 +217,19 @@
 
     // ✅ Game data (shadow + reveal + multiple accepted answers)
     const gameData = [
-      { shadowUrl: "images/ivysaur_shadow.png",      revealUrl: "images/ivysaur_real.png",      answers: ["ivysaur"] },
-      { shadowUrl: "images/arceus_shadow.png",       revealUrl: "images/arceus_real.png",       answers: ["arceus"] },
-      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuff ball", "jigglypuff"] },
-      { shadowUrl: "images/sphealscarf_shadow.png",  revealUrl: "images/sphealscarf_real.png",  answers: ["spheal with a scarf", "spheal costume", "spheal wearing a scarf", "spheal scarf", "spheal"] },
-      { shadowUrl: "images/wattrell_shadow.png",     revealUrl: "images/wattrell_real.png",     answers: ["wattrel", "wattrell"] },
-      { shadowUrl: "images/treecko_shadow.png",      revealUrl: "images/trecko_real.png",      answers: ["treecko"] },
-      { shadowUrl: "images/sawsbuck_shadow.png",     revealUrl: "images/sawsbuck_real.png",     answers: ["sawsbuck"] },
-      { shadowUrl: "images/feebas_shadow.png",       revealUrl: "images/feebas_real.png",       answers: ["feebas"] },
-      { shadowUrl: "images/megablaziken_shadow.png", revealUrl: "images/megablaziken_real.png", answers: ["mega blaziken", "blaziken", "megablaziken"] },
-      { shadowUrl: "images/gmaxmachamp_shadow.png",  revealUrl: "images/gmaxmachamp_real.png",  answers: ["gigantamax machamp", "gmax machamp", "machamp", "g-max machamp", "gigantamax machamp"] }
+      { shadowUrl: "images/ivysaur_shadow.png",        revealUrl: "images/ivysaur_real.png",        answers: ["ivysaur"] },
+      { shadowUrl: "images/arceus_shadow.png",         revealUrl: "images/arceus_real.png",         answers: ["arceus"] },
+      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuff", "beach ball jigglypuff"] },
+      { shadowUrl: "images/sphealscarf_shadow.png",    revealUrl: "images/sphealscarf_real.png",    answers: ["spheal with a scarf", "spheal costume", "spheal wearing a scarf", "spheal scarf", "spheal"] },
+      { shadowUrl: "images/wattrell_shadow.png",       revealUrl: "images/wattrell_real.png",       answers: ["wattrel", "wattrell"] },
+      { shadowUrl: "images/treecko_shadow.png",        revealUrl: "images/trecko_real.png",        answers: ["treecko"] },
+      { shadowUrl: "images/sawsbuck_shadow.png",       revealUrl: "images/sawsbuck_real.png",       answers: ["sawsbuck"] },
+      { shadowUrl: "images/feebas_shadow.png",         revealUrl: "images/feebas_real.png",         answers: ["feebas"] },
+      { shadowUrl: "images/megablaziken_shadow.png",   revealUrl: "images/megablaziken_real.png",   answers: ["mega blaziken", "blaziken", "megablaziken"] },
+      { shadowUrl: "images/gmaxmachamp_shadow.png",    revealUrl: "images/gmaxmachamp_real.png",    answers: ["gigantamax machamp", "gmax machamp", "machamp", "g-max machamp"] }
     ];
 
     function displayName(roundData) {
-      // first entry is the "official" display name
-      // Title-case it a bit for display
       const raw = roundData.answers[0] || "";
       return raw.split(" ").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
     }
@@ -228,7 +238,101 @@
       return (s || "")
         .toLowerCase()
         .trim()
-        .replace(/\s+/g, " "); // collapse multiple spaces
+        .replace(/\s+/g, " ");
+    }
+
+    // ---------------------------
+    // ✅ LEADERBOARD (reads from your Web App)
+    // IMPORTANT: Your Apps Script must return JSON on GET, like:
+    // { "success": true, "rows": [ {name:"Madi", score:8, total_time:90, timestamp:...}, ... ] }
+    // ---------------------------
+    async function loadLeaderboard() {
+      const status = document.getElementById("leaderboard-status");
+      const list = document.getElementById("leaderboard-list");
+
+      if (!status || !list) return;
+
+      status.textContent = "Loading leaderboard...";
+      list.innerHTML = "";
+
+      try {
+        // cache-buster so GitHub pages doesn’t serve stale data
+        const url = `${GOOGLE_SHEETS_WEBAPP_URL}?action=leaderboard&t=${Date.now()}`;
+        const res = await fetch(url, { method: "GET" });
+        const data = await res.json();
+
+        const rows = Array.isArray(data?.rows) ? data.rows : [];
+
+        if (!rows.length) {
+          status.textContent = "No scores yet. Be the first!";
+          return;
+        }
+
+        // sort: score desc, then total_time asc, then timestamp asc
+        rows.sort((a, b) => {
+          const sa = Number(a.score || 0);
+          const sb = Number(b.score || 0);
+          if (sb !== sa) return sb - sa;
+
+          const ta = Number(a.total_time || 999999);
+          const tb = Number(b.total_time || 999999);
+          if (ta !== tb) return ta - tb;
+
+          return Number(a.timestamp || 0) - Number(b.timestamp || 0);
+        });
+
+        // show top 10
+        const top = rows.slice(0, 10);
+
+        status.textContent = "";
+        top.forEach((entry, index) => {
+          const name = String(entry.name || "Unknown");
+          const sc = Number(entry.score || 0);
+          const totalTime = Number(entry.total_time || 0);
+          const minutes = Math.floor(totalTime / 60);
+          const seconds = totalTime % 60;
+
+          const div = document.createElement("div");
+          div.className = `flex items-center gap-3 p-3 rounded-lg ${
+            index === 0 ? 'bg-gradient-to-r from-yellow-300 to-yellow-200 border-2 border-yellow-400' :
+            index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-200 border-2 border-gray-400' :
+            index === 2 ? 'bg-gradient-to-r from-orange-300 to-orange-200 border-2 border-orange-400' :
+            'bg-white border border-gray-200'
+          }`;
+
+          const rank = document.createElement("div");
+          rank.className = "font-bold text-lg w-8 text-center";
+          rank.textContent = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+
+          const nm = document.createElement("div");
+          nm.className = "flex-1 font-semibold text-gray-800 truncate";
+          nm.textContent = name;
+
+          const right = document.createElement("div");
+          right.className = "text-right";
+
+          const scoreEl = document.createElement("div");
+          scoreEl.className = "font-bold text-lg text-purple-600";
+          scoreEl.textContent = `${sc}/10`;
+
+          const timeEl = document.createElement("div");
+          timeEl.className = "text-xs text-gray-500";
+          timeEl.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+          right.appendChild(scoreEl);
+          right.appendChild(timeEl);
+
+          div.appendChild(rank);
+          div.appendChild(nm);
+          div.appendChild(right);
+
+          list.appendChild(div);
+        });
+      } catch (err) {
+        console.error("Leaderboard load failed:", err);
+        status.textContent =
+          "Leaderboard couldn't load. (Your Google Script must return JSON for GET.)";
+      }
     }
 
     // Start game
@@ -444,64 +548,93 @@
       document.getElementById('save-score-section').style.display = 'block';
 
       displayDetailedResults();
+      loadLeaderboard(); // ✅ show leaderboard when results open
     }
 
-   async function saveScore(event) {
-  event.preventDefault();
-  if (isSaving) return;
+    // ✅ Save score to Google Sheet
+    async function saveScore(event) {
+      event.preventDefault();
+      if (isSaving) return;
 
-  const playerName = document.getElementById("player-name").value.trim();
-  if (!playerName) return;
+      const playerName = document.getElementById("player-name").value.trim();
+      if (!playerName) return;
 
-  const GOOGLE_SHEETS_WEBAPP_URL =
-    "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
+      isSaving = true;
 
-  isSaving = true;
+      const btn = document.getElementById("save-score-btn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
 
-  const btn = document.getElementById("save-score-btn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+      const totalTime = roundTimes.reduce((sum, t) => sum + t, 0);
 
-  const totalTime = roundTimes.reduce((sum, t) => sum + t, 0);
+      const scoreData = {
+        name: playerName,
+        score,
+        timestamp: Date.now(),
+        total_time: totalTime,
+      };
 
-  const scoreData = {
-    name: playerName,
-    score,
-    timestamp: Date.now(),
-    total_time: totalTime,
-  };
+      for (let i = 0; i < gameData.length; i++) {
+        scoreData[`round_${i + 1}_time`] = roundTimes[i] ?? 15;
+      }
 
-  for (let i = 0; i < gameData.length; i++) {
-    scoreData[`round_${i + 1}_time`] = roundTimes[i] ?? 15;
-  }
+      // We try a normal CORS POST first (best).
+      // If your Apps Script doesn't return CORS headers, we fall back to no-cors and still show success.
+      try {
+        let saved = false;
 
-  try {
-    await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(scoreData),
-    });
+        try {
+          const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(scoreData),
+          });
 
-    document.getElementById("save-feedback").textContent = "✅ Score saved!";
-    document.getElementById("save-feedback").className =
-      "mt-2 text-center text-sm font-semibold text-green-600";
-    document.getElementById("save-score-section").style.display = "none";
-  } catch (err) {
-    console.error("SAVE ERROR:", err);
+          // If it returns JSON, great:
+          const json = await res.json().catch(() => null);
+          if (res.ok && (json?.success === true || json?.ok === true || json)) {
+            saved = true;
+          }
+        } catch (corsErr) {
+          // fallback below
+        }
 
-    document.getElementById("save-feedback").textContent =
-      "❌ Failed to save. Try again!";
-    document.getElementById("save-feedback").className =
-      "mt-2 text-center text-sm font-semibold text-red-600";
+        if (!saved) {
+          // fallback (no-cors). You cannot read response, but it will still POST.
+          await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(scoreData),
+          });
+          saved = true;
+        }
 
-    btn.disabled = false;
-    btn.textContent = "Save";
-  } finally {
-    isSaving = false;
-  }
-}
+        if (saved) {
+          document.getElementById("save-feedback").textContent = "✅ Score saved!";
+          document.getElementById("save-feedback").className =
+            "mt-2 text-center text-sm font-semibold text-green-600";
+          document.getElementById("save-score-section").style.display = "none";
 
+          // ✅ refresh leaderboard after saving
+          await loadLeaderboard();
+        } else {
+          throw new Error("Save failed");
+        }
+      } catch (err) {
+        console.error("SAVE ERROR:", err);
+
+        document.getElementById("save-feedback").textContent =
+          "❌ Failed to save. Try again!";
+        document.getElementById("save-feedback").className =
+          "mt-2 text-center text-sm font-semibold text-red-600";
+
+        btn.disabled = false;
+        btn.textContent = "Save";
+      } finally {
+        isSaving = false;
+      }
+    }
 
     function displayDetailedResults() {
       const container = document.getElementById('results-overview');
@@ -609,3 +742,4 @@
   </script>
 </body>
 </html>
+
