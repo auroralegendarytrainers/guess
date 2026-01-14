@@ -1,18 +1,16 @@
 <!doctype html>
 <html lang="en" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Who's That Pokemon?</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Who's That Pokémon?</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
-    body {
-      box-sizing: border-box;
-    }
-    * {
-      font-family: 'Fredoka', sans-serif;
-    }
+    body { box-sizing: border-box; }
+    * { font-family: 'Fredoka', sans-serif; }
+
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       25% { transform: translateX(-5px); }
@@ -34,128 +32,165 @@
       from { filter: brightness(0) contrast(200%); }
       to { filter: brightness(1) contrast(1); }
     }
+
     .shake { animation: shake 0.3s ease-in-out; }
     .pulse-correct { animation: pulse-correct 0.5s ease-in-out; }
     .float { animation: float 3s ease-in-out infinite; }
     .timer-critical { animation: timer-pulse 0.5s ease-in-out infinite; }
     .reveal-animation { animation: reveal 0.8s ease-out forwards; }
+
     .shadow-image {
       filter: brightness(0) contrast(200%);
       transition: filter 0.3s ease;
     }
-    .option-btn {
-      transition: all 0.2s ease;
-    }
-    .option-btn:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    }
-    .progress-fill {
-      transition: width 0.3s ease;
-    }
+
+    .progress-fill { transition: width 0.3s ease; }
+
+    /* Make images fill the container nicely */
     .game-image {
-      max-width: 100%;
-      max-height: 100%;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
-      border-radius: block;
+      border-radius: 1rem;
+      display: block;
     }
   </style>
-  <style>@view-transition { navigation: auto; }</style>
- </head>
- <body class="h-full">
-  <div id="app" class="h-full w-full overflow-auto" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><!-- Start Screen -->
-   <div id="start-screen" class="h-full flex flex-col items-center justify-center p-6 text-center">
-    <div class="float">
-     <svg width="120" height="120" viewbox="0 0 120 120" class="mb-6"><circle cx="60" cy="60" r="55" fill="#fff" opacity="0.2" /> <text x="60" y="75" text-anchor="middle" font-size="60">
-       🎯
-      </text>
-     </svg>
-    </div>
-    <h1 id="title-text" class="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">Guess The Image!</h1>
-    <p class="text-white/90 text-lg mb-8 max-w-md">Can you identify all 10 images before time runs out? You have 15 seconds for each!</p><button id="start-btn" onclick="startGame()" class="bg-white text-purple-600 font-bold text-xl px-10 py-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"> Start Game </button>
-   </div><!-- Game Screen -->
-   <div id="game-screen" class="h-full flex flex-col p-4 md:p-6 hidden"><!-- Header -->
-    <div class="flex justify-between items-center mb-4">
-     <div class="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2"><span class="text-white font-semibold">Round <span id="round-num">1</span>/10</span>
-     </div>
-     <div class="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2"><span class="text-white font-semibold">Score: <span id="score">0</span></span>
-     </div>
-    </div><!-- Progress Bar -->
-    <div class="w-full bg-white/20 rounded-full h-2 mb-4">
-     <div id="progress-bar" class="progress-fill bg-white h-2 rounded-full" style="width: 10%"></div>
-    </div><!-- Timer -->
-    <div class="flex justify-center mb-4">
-     <div id="timer-container" class="bg-white rounded-2xl px-6 py-3 shadow-lg flex items-center gap-3"><span id="timer-label-text" class="text-gray-600 font-medium">Time Left:</span> <span id="timer" class="text-3xl font-bold text-purple-600">15</span> <span class="text-gray-400">s</span>
-     </div>
-    </div><!-- Image Display -->
-    <div class="flex-1 flex items-center justify-center mb-4">
-     <div id="image-container" class="w-full max-w-md aspect-square flex items-center justify-center p-2"><!-- Images will be inserted here -->
-     </div>
-    </div><!-- Answer Input -->
-    <form id="answer-form" class="max-w-lg mx-auto w-full" onsubmit="checkAnswer(event)"><label for="answer-input" class="block text-white text-center font-semibold mb-2 text-lg">What is it?</label>
-     <div class="flex gap-3"><input type="text" id="answer-input" class="flex-1 px-6 py-4 text-xl font-semibold text-gray-800 rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50" placeholder="Type your answer..." autocomplete="off" required> <button type="submit" id="submit-btn" class="bg-white text-purple-600 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"> Submit </button>
-     </div>
-    </form><!-- Feedback -->
-    <div id="feedback" class="text-center mt-4 h-8 text-xl font-bold"></div>
-   </div><!-- Results Screen -->
-   <div id="results-screen" class="h-full overflow-auto p-6 hidden">
-    <div class="max-w-2xl mx-auto">
-     <div class="bg-white rounded-3xl p-8 md:p-10 shadow-2xl mb-6">
-      <div class="text-6xl mb-4 text-center" id="results-emoji">
-       🎉
-      </div>
-      <h2 class="text-3xl font-bold text-gray-800 mb-2 text-center">Game Over!</h2>
-      <p class="text-gray-600 mb-6 text-center">Here's how you did:</p>
-      <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 mb-6">
-       <div class="text-white/80 text-lg text-center">
-        Final Score
-       </div>
-       <div id="final-score" class="text-5xl font-bold text-white text-center">
-        0
-       </div>
-       <div class="text-white/80 text-center">
-        out of 10
-       </div>
-      </div>
-      <div id="results-message" class="text-gray-600 mb-6 text-center"></div><!-- Save to Leaderboard -->
-      <div id="save-score-section" class="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4">
-       <h3 class="text-lg font-bold text-gray-800 mb-3 text-center">📊 Save to Leaderboard</h3>
-       <form id="save-score-form" onsubmit="saveScore(event)" class="flex gap-2"><input type="text" id="player-name" class="flex-1 px-4 py-3 text-lg font-semibold text-gray-800 rounded-lg border-2 border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="Enter your name..." maxlength="20" required> <button type="submit" id="save-score-btn" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold text-lg px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"> Save </button>
-       </form>
-       <div id="save-feedback" class="mt-2 text-center text-sm font-semibold"></div>
-      </div><!-- Leaderboard -->
-      <div class="mb-6">
-       <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">🏆 Leaderboard</h3>
-       <div id="leaderboard-container" class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-300 max-h-96 overflow-y-auto">
-        <div id="leaderboard-list" class="space-y-2"><!-- Leaderboard entries will be inserted here -->
-        </div>
-       </div>
-      </div><!-- Detailed Results Overview -->
-      <div class="mb-6">
-       <h3 class="text-xl font-bold text-gray-800 mb-4">Your Answers</h3>
-       <div id="results-overview" class="space-y-3 max-h-96 overflow-y-auto"><!-- Results will be inserted here -->
-       </div>
-      </div>
-      <div class="flex gap-3"><button onclick="shareResults()" class="flex-1 bg-blue-500 text-white font-bold text-lg px-6 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"> 📤 Share Results </button> <button onclick="restartGame()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg px-6 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"> Play Again </button>
-      </div>
-     </div>
-    </div>
-   </div>
-  </div>
-  <script>
-    // Default configuration
-    const defaultConfig = {
-      game_title: "Who's That Pokemon?",
-      start_button_text: "Start Game",
-      timer_label: "Time Left:",
-      background_color: "#667eea",
-      accent_color: "#764ba2",
-      text_color: "#ffffff",
-      button_color: "#8b5cf6",
-      card_color: "#ffffff"
-    };
+</head>
 
-    let config = { ...defaultConfig };
+<body class="h-full">
+  <div id="app" class="h-full w-full overflow-auto" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="h-full flex flex-col items-center justify-center p-6 text-center">
+      <div class="float">
+        <svg width="120" height="120" viewBox="0 0 120 120" class="mb-6">
+          <circle cx="60" cy="60" r="55" fill="#fff" opacity="0.2" />
+          <text x="60" y="75" text-anchor="middle" font-size="60">🎯</text>
+        </svg>
+      </div>
+
+      <h1 id="title-text" class="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+        Who's That Pokémon?
+      </h1>
+
+      <p class="text-white/90 text-lg mb-8 max-w-md">
+        Guess the Pokémon from its silhouette! You have 15 seconds for each.
+      </p>
+
+      <button id="start-btn" onclick="startGame()"
+        class="bg-white text-purple-600 font-bold text-xl px-10 py-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+        Start Game
+      </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="h-full flex flex-col p-4 md:p-6 hidden">
+
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-4">
+        <div class="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+          <span class="text-white font-semibold">Round <span id="round-num">1</span>/10</span>
+        </div>
+        <div class="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+          <span class="text-white font-semibold">Score: <span id="score">0</span></span>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-white/20 rounded-full h-2 mb-4">
+        <div id="progress-bar" class="progress-fill bg-white h-2 rounded-full" style="width: 10%"></div>
+      </div>
+
+      <!-- Timer -->
+      <div class="flex justify-center mb-4">
+        <div id="timer-container" class="bg-white rounded-2xl px-6 py-3 shadow-lg flex items-center gap-3">
+          <span id="timer-label-text" class="text-gray-600 font-medium">Time Left:</span>
+          <span id="timer" class="text-3xl font-bold text-purple-600">15</span>
+          <span class="text-gray-400">s</span>
+        </div>
+      </div>
+
+      <!-- Image Display -->
+      <div class="flex-1 flex items-center justify-center mb-4">
+        <div id="image-container" class="w-full max-w-md aspect-square flex items-center justify-center p-2">
+          <!-- image inserted here -->
+        </div>
+      </div>
+
+      <!-- Answer Input -->
+      <form id="answer-form" class="max-w-lg mx-auto w-full" onsubmit="checkAnswer(event)">
+        <label for="answer-input" class="block text-white text-center font-semibold mb-2 text-lg">Who is it?</label>
+        <div class="flex gap-3">
+          <input type="text" id="answer-input"
+            class="flex-1 px-6 py-4 text-xl font-semibold text-gray-800 rounded-xl shadow-lg focus:outline-none focus:ring-4 focus:ring-white/50"
+            placeholder="Type your answer..." autocomplete="off" required>
+          <button type="submit" id="submit-btn"
+            class="bg-white text-purple-600 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+            Submit
+          </button>
+        </div>
+      </form>
+
+      <!-- Feedback -->
+      <div id="feedback" class="text-center mt-4 h-8 text-xl font-bold"></div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="results-screen" class="h-full overflow-auto p-6 hidden">
+      <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-3xl p-8 md:p-10 shadow-2xl mb-6">
+
+          <div class="text-6xl mb-4 text-center" id="results-emoji">🎉</div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-2 text-center">Game Over!</h2>
+          <p class="text-gray-600 mb-6 text-center">Here's how you did:</p>
+
+          <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 mb-6">
+            <div class="text-white/80 text-lg text-center">Final Score</div>
+            <div id="final-score" class="text-5xl font-bold text-white text-center">0</div>
+            <div class="text-white/80 text-center">out of 10</div>
+          </div>
+
+          <div id="results-message" class="text-gray-600 mb-6 text-center"></div>
+
+          <!-- Save -->
+          <div id="save-score-section" class="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4">
+            <h3 class="text-lg font-bold text-gray-800 mb-3 text-center">📊 Save to Google Sheet</h3>
+            <form id="save-score-form" onsubmit="saveScore(event)" class="flex gap-2">
+              <input type="text" id="player-name"
+                class="flex-1 px-4 py-3 text-lg font-semibold text-gray-800 rounded-lg border-2 border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="Enter your name..." maxlength="20" required>
+              <button type="submit" id="save-score-btn"
+                class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold text-lg px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+                Save
+              </button>
+            </form>
+            <div id="save-feedback" class="mt-2 text-center text-sm font-semibold"></div>
+          </div>
+
+          <!-- Detailed Results -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Your Answers</h3>
+            <div id="results-overview" class="space-y-3 max-h-96 overflow-y-auto"></div>
+          </div>
+
+          <div class="flex gap-3">
+            <button onclick="shareResults()" class="flex-1 bg-blue-500 text-white font-bold text-lg px-6 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+              📤 Share Results
+            </button>
+            <button onclick="restartGame()" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg px-6 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200">
+              Play Again
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ✅ Put your Google Apps Script Web App URL here
+    const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
 
     // Game state
     let currentRound = 0;
@@ -164,115 +199,107 @@
     let timerInterval = null;
     let gameActive = false;
     let gameResults = [];
-    let leaderboardData = [];
     let isSaving = false;
     let roundStartTime = 0;
     let roundTimes = [];
 
-    // Game data - 10 images with shadow and revealed URLs
-    // Replace these placeholder URLs with your actual image URLs
+    // ✅ Game data (shadow + reveal + multiple accepted answers)
     const gameData = [
-      {
-        shadowUrl: "images/ivysaur_shadow.png",
-        revealUrl: "images/ivysaur_real.png",
-        answer: "Ivysaur"
-      },
-     { shadowUrl: "images/arceus_shadow.png", revealUrl: "images/arceus_real.png", answer: "Arceus" },
-
-      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answer: "Jigglypuff Beach ball" },
-
-{ shadowUrl: "images/sphealscarf_shadow.png", revealUrl: "images/sphealscarf_real.png", answer: "Spheal With a Scarf", "Spheal Costume", "Spheal Wearing a Scarf" },
-
-{ shadowUrl: "images/wattrell_shadow.png", revealUrl: "images/wattrell_real.png", answer: "Wattrel" },
-
-{ shadowUrl: "images/treecko_shadow.png", revealUrl: "images/treecko_real.png", answer: "Treecko" },
-
-{ shadowUrl: "images/sawsbuck_shadow.png", revealUrl: "images/sawsbuck_real.png", answer: "Sawsbuck" },
-
-{ shadowUrl: "images/feebas_shadow.png", revealUrl: "images/feebas_real.png", answer: "Feebas" },
-
-{ shadowUrl: "images/megablaziken_shadow.png", revealUrl: "images/megablaziken_real.png", answer: "Mega Blaziken", "Blaziken" },
-
-{ shadowUrl: "images/gmaxmachamp_shadow.png", revealUrl: "images/gmaxmachamp_real.png", answer: "Gigantamax Machamp", "GMax Machamp", "Machamp" }
-
+      { shadowUrl: "images/ivysaur_shadow.png",      revealUrl: "images/ivysaur_real.png",      answers: ["ivysaur"] },
+      { shadowUrl: "images/arceus_shadow.png",       revealUrl: "images/arceus_real.png",       answers: ["arceus"] },
+      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuffball"] },
+      { shadowUrl: "images/sphealscarf_shadow.png",  revealUrl: "images/sphealscarf_real.png",  answers: ["spheal with a scarf", "spheal costume", "spheal wearing a scarf", "sphealscarf"] },
+      { shadowUrl: "images/wattrell_shadow.png",     revealUrl: "images/wattrell_real.png",     answers: ["wattrel", "wattrell"] },
+      { shadowUrl: "images/treecko_shadow.png",      revealUrl: "images/treecko_real.png",      answers: ["treecko"] },
+      { shadowUrl: "images/sawsbuck_shadow.png",     revealUrl: "images/sawsbuck_real.png",     answers: ["sawsbuck"] },
+      { shadowUrl: "images/feebas_shadow.png",       revealUrl: "images/feebas_real.png",       answers: ["feebas"] },
+      { shadowUrl: "images/megablaziken_shadow.png", revealUrl: "images/megablaziken_real.png", answers: ["mega blaziken", "blaziken", "megablaziken"] },
+      { shadowUrl: "images/gmaxmachamp_shadow.png",  revealUrl: "images/gmaxmachamp_real.png",  answers: ["gigantamax machamp", "gmax machamp", "machamp", "g-max machamp", "gmaxmachamp"] }
     ];
 
-    // Start the game
+    function displayName(roundData) {
+      // first entry is the "official" display name
+      // Title-case it a bit for display
+      const raw = roundData.answers[0] || "";
+      return raw.split(" ").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+    }
+
+    function normalize(s) {
+      return (s || "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " "); // collapse multiple spaces
+    }
+
+    // Start game
     function startGame() {
       currentRound = 0;
       score = 0;
       gameActive = true;
       gameResults = [];
       roundTimes = [];
-      
+
       document.getElementById('start-screen').classList.add('hidden');
       document.getElementById('results-screen').classList.add('hidden');
       document.getElementById('game-screen').classList.remove('hidden');
-      
+
       updateScore();
       loadRound();
     }
 
-    // Load a round
+    // Load round
     function loadRound() {
-      if (currentRound >= 10) {
+      if (currentRound >= gameData.length) {
         endGame();
         return;
       }
 
       const roundData = gameData[currentRound];
-      
-      // Update round display
+
       document.getElementById('round-num').textContent = currentRound + 1;
-      document.getElementById('progress-bar').style.width = `${(currentRound + 1) * 10}%`;
-      
-      // Display shadow image
+      document.getElementById('progress-bar').style.width = `${((currentRound + 1) / gameData.length) * 100}%`;
+
       const imageContainer = document.getElementById('image-container');
       imageContainer.innerHTML = `
-  <img
-    id="round-image"
-    src="${roundData.shadowUrl}"
-    alt="Mystery Pokémon"
-    class="game-image shadow-image"
-  />
-`;
-      
-      // Clear and enable input
+        <img
+          id="round-image"
+          src="${roundData.shadowUrl}"
+          alt="Mystery Pokémon"
+          class="game-image shadow-image"
+          onerror="this.style.display='none';"
+        />
+      `;
+
       const answerInput = document.getElementById('answer-input');
       answerInput.value = '';
       answerInput.disabled = false;
       answerInput.focus();
-      
+
       document.getElementById('submit-btn').disabled = false;
 
-      // Clear feedback
       document.getElementById('feedback').textContent = '';
       document.getElementById('feedback').className = 'text-center mt-4 h-8 text-xl font-bold';
 
-      // Record round start time
       roundStartTime = Date.now();
-
-      // Start timer
       startTimer();
     }
 
-    // Start timer
     function startTimer() {
       timeLeft = 15;
       updateTimerDisplay();
-      
+
       if (timerInterval) clearInterval(timerInterval);
-      
+
       timerInterval = setInterval(() => {
         timeLeft--;
         updateTimerDisplay();
-        
+
         if (timeLeft <= 5) {
-          document.getElementById('timer').classList.add('timer-critical');
-          document.getElementById('timer').classList.add('text-red-500');
-          document.getElementById('timer').classList.remove('text-purple-600');
+          const t = document.getElementById('timer');
+          t.classList.add('timer-critical', 'text-red-500');
+          t.classList.remove('text-purple-600');
         }
-        
+
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           timeUp();
@@ -280,94 +307,91 @@
       }, 1000);
     }
 
-    // Update timer display
     function updateTimerDisplay() {
       document.getElementById('timer').textContent = timeLeft;
     }
 
-    // Reveal the image
     function revealImage() {
       const roundData = gameData[currentRound];
       const imageContainer = document.getElementById('image-container');
-      imageContainer.innerHTML = `<img src="${roundData.revealUrl}" alt="${roundData.answer}" class="game-image reveal-animation" onerror="this.src=''; this.alt='Image failed to load'; this.style.display='none';">`;
+      imageContainer.innerHTML = `
+        <img
+          src="${roundData.revealUrl}"
+          alt="${displayName(roundData)}"
+          class="game-image reveal-animation"
+          onerror="this.style.display='none';"
+        />
+      `;
     }
 
-    // Time up
     function timeUp() {
       gameActive = false;
       const roundData = gameData[currentRound];
-      
-      // Calculate time taken (full 15 seconds)
+
       const timeTaken = 15;
       roundTimes.push(timeTaken);
-      
-      // Record time up result
+
       gameResults.push({
         round: currentRound + 1,
         imageUrl: roundData.revealUrl,
-        correctAnswer: roundData.answer,
+        correctAnswer: displayName(roundData),
         userAnswer: '',
         isCorrect: false,
         timeUp: true,
-        timeTaken: timeTaken
+        timeTaken
       });
-      
-      // Disable input
+
       document.getElementById('answer-input').disabled = true;
       document.getElementById('submit-btn').disabled = true;
 
-      // Reveal the image
       revealImage();
 
-      document.getElementById('feedback').textContent = `⏰ Time's up! It was: ${roundData.answer}`;
+      document.getElementById('feedback').textContent = `⏰ Time's up! It was: ${displayName(roundData)}`;
       document.getElementById('feedback').classList.add('text-yellow-200');
       document.getElementById('image-container').classList.add('shake');
 
       setTimeout(() => {
         document.getElementById('image-container').classList.remove('shake');
-        document.getElementById('timer').classList.remove('timer-critical', 'text-red-500');
-        document.getElementById('timer').classList.add('text-purple-600');
+        const t = document.getElementById('timer');
+        t.classList.remove('timer-critical', 'text-red-500');
+        t.classList.add('text-purple-600');
         currentRound++;
         gameActive = true;
         loadRound();
       }, 2500);
     }
 
-    // Check answer
     function checkAnswer(event) {
       event.preventDefault();
-      
       if (!gameActive) return;
-      
+
       clearInterval(timerInterval);
       gameActive = false;
-      
+
       const roundData = gameData[currentRound];
-      const userAnswer = document.getElementById('answer-input').value.trim();
-      
-      // Calculate time taken for this round
+      const userAnswerRaw = document.getElementById('answer-input').value.trim();
+      const userAnswer = normalize(userAnswerRaw);
+
       const timeTaken = Math.round((Date.now() - roundStartTime) / 1000);
       roundTimes.push(timeTaken);
-      
-      // Disable input
+
       document.getElementById('answer-input').disabled = true;
       document.getElementById('submit-btn').disabled = true;
-      
-      // Case-insensitive comparison
-      const isCorrect = userAnswer.toLowerCase() === roundData.answer.toLowerCase();
 
-      // Reveal the image
+      const isCorrect = roundData.answers
+        .map(a => normalize(a))
+        .some(a => a === userAnswer);
+
       revealImage();
 
-      // Record result
       gameResults.push({
         round: currentRound + 1,
         imageUrl: roundData.revealUrl,
-        correctAnswer: roundData.answer,
-        userAnswer: userAnswer,
-        isCorrect: isCorrect,
+        correctAnswer: displayName(roundData),
+        userAnswer: userAnswerRaw,
+        isCorrect,
         timeUp: false,
-        timeTaken: timeTaken
+        timeTaken
       });
 
       if (isCorrect) {
@@ -377,212 +401,95 @@
         document.getElementById('feedback').classList.add('text-green-300');
         document.getElementById('image-container').classList.add('pulse-correct');
       } else {
-        document.getElementById('feedback').textContent = `❌ Wrong! It was: ${roundData.answer}`;
+        document.getElementById('feedback').textContent = `❌ Wrong! It was: ${displayName(roundData)}`;
         document.getElementById('feedback').classList.add('text-red-300');
         document.getElementById('image-container').classList.add('shake');
       }
 
       setTimeout(() => {
         document.getElementById('image-container').classList.remove('pulse-correct', 'shake');
-        document.getElementById('timer').classList.remove('timer-critical', 'text-red-500');
-        document.getElementById('timer').classList.add('text-purple-600');
+        const t = document.getElementById('timer');
+        t.classList.remove('timer-critical', 'text-red-500');
+        t.classList.add('text-purple-600');
         currentRound++;
         gameActive = true;
         loadRound();
       }, 2000);
     }
 
-    // Update score display
     function updateScore() {
       document.getElementById('score').textContent = score;
     }
 
-    // End game
     function endGame() {
       clearInterval(timerInterval);
-      
+
       document.getElementById('game-screen').classList.add('hidden');
       document.getElementById('results-screen').classList.remove('hidden');
-      
+
       document.getElementById('final-score').textContent = score;
 
       let emoji, message;
-      if (score === 10) {
-        emoji = '🏆';
-        message = 'Perfect score! You\'re a guessing master!';
-      } else if (score >= 8) {
-        emoji = '🌟';
-        message = 'Amazing! You\'ve got sharp eyes!';
-      } else if (score >= 6) {
-        emoji = '😊';
-        message = 'Good job! Keep practicing!';
-      } else if (score >= 4) {
-        emoji = '🤔';
-        message = 'Not bad! You can do better!';
-      } else {
-        emoji = '💪';
-        message = 'Keep trying! Practice makes perfect!';
-      }
+      if (score === 10) { emoji = '🏆'; message = "Perfect score! You're a guessing master!"; }
+      else if (score >= 8) { emoji = '🌟'; message = "Amazing! You've got sharp eyes!"; }
+      else if (score >= 6) { emoji = '😊'; message = "Good job! Keep practicing!"; }
+      else if (score >= 4) { emoji = '🤔'; message = "Not bad! You can do better!"; }
+      else { emoji = '💪'; message = "Keep trying! Practice makes perfect!"; }
 
       document.getElementById('results-emoji').textContent = emoji;
       document.getElementById('results-message').textContent = message;
 
-      // Reset save form
       document.getElementById('player-name').value = '';
       document.getElementById('save-feedback').textContent = '';
       document.getElementById('save-score-section').style.display = 'block';
 
-      // Display detailed results and leaderboard
       displayDetailedResults();
-      renderLeaderboard();
     }
 
-    // Save score to leaderboard
     async function saveScore(event) {
       event.preventDefault();
-      
       if (isSaving) return;
-      
+
       const playerName = document.getElementById('player-name').value.trim();
       if (!playerName) return;
 
-      // Check if limit reached
-      if (leaderboardData.length >= 999) {
-        document.getElementById('save-feedback').textContent = '⚠️ Leaderboard is full!';
-        document.getElementById('save-feedback').className = 'mt-2 text-center text-sm font-semibold text-red-600';
-        return;
-      }
-
       isSaving = true;
-      document.getElementById('save-score-btn').disabled = true;
-      document.getElementById('save-score-btn').textContent = 'Saving...';
-      
-      // Calculate total time
-      const totalTime = roundTimes.reduce((sum, time) => sum + time, 0);
-      
-      // Create data object with individual round times
+      const btn = document.getElementById('save-score-btn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const totalTime = roundTimes.reduce((sum, t) => sum + t, 0);
+
       const scoreData = {
         name: playerName,
-        score: score,
-        timestamp: Date.now(),
-        total_time: totalTime
+        score,
+        total_time: totalTime,
+        timestamp: Date.now()
       };
-      
-      // Add individual round times
-      for (let i = 0; i < 10; i++) {
-        scoreData[`round_${i + 1}_time`] = roundTimes[i] || 15;
-      }
-      
-     const GOOGLE_SHEETS_WEBAPP_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
-try {
-  const res = await fetch(https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(scoreData),
-  });
+      try {
+        const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(scoreData),
+        });
 
-  const json = await res.json().catch(() => ({}));
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.success !== true) throw new Error("Save failed");
 
-  if (!res.ok || json.success !== true) {
-    throw new Error("Google Sheets save failed");
-  }
-
-  document.getElementById("save-feedback").textContent = "✅ Score saved!";
-  document.getElementById("save-feedback").className =
-    "mt-2 text-center text-sm font-semibold text-green-600";
-  document.getElementById("save-score-section").style.display = "none";
-} catch (err) {
-  document.getElementById("save-feedback").textContent =
-    "❌ Failed to save. Try again!";
-  document.getElementById("save-feedback").className =
-    "mt-2 text-center text-sm font-semibold text-red-600";
-  document.getElementById("save-score-btn").disabled = false;
-  document.getElementById("save-score-btn").textContent = "Save";
-}
-
-
-      isSaving = false;
-      
-      if (result.isOk) {
         document.getElementById('save-feedback').textContent = '✅ Score saved!';
         document.getElementById('save-feedback').className = 'mt-2 text-center text-sm font-semibold text-green-600';
         document.getElementById('save-score-section').style.display = 'none';
-      } else {
+      } catch (err) {
         document.getElementById('save-feedback').textContent = '❌ Failed to save. Try again!';
         document.getElementById('save-feedback').className = 'mt-2 text-center text-sm font-semibold text-red-600';
-        document.getElementById('save-score-btn').disabled = false;
-        document.getElementById('save-score-btn').textContent = 'Save';
+        btn.disabled = false;
+        btn.textContent = 'Save';
+      } finally {
+        isSaving = false;
       }
     }
 
-    // Render leaderboard
-    function renderLeaderboard() {
-      const container = document.getElementById('leaderboard-list');
-      
-      if (!leaderboardData || leaderboardData.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-500 py-4">No scores yet. Be the first!</div>';
-        return;
-      }
-
-      // Sort by score (descending) then by total_time (ascending for ties)
-      const sorted = [...leaderboardData].sort((a, b) => {
-        if (b.score !== a.score) {
-          return b.score - a.score;
-        }
-        // For ties, faster time wins
-        if (a.total_time && b.total_time) {
-          return a.total_time - b.total_time;
-        }
-        return a.timestamp - b.timestamp;
-      });
-
-      container.innerHTML = '';
-      
-      sorted.forEach((entry, index) => {
-        const entryDiv = document.createElement('div');
-        entryDiv.className = `flex items-center gap-3 p-3 rounded-lg ${
-          index === 0 ? 'bg-gradient-to-r from-yellow-300 to-yellow-200 border-2 border-yellow-400' :
-          index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-200 border-2 border-gray-400' :
-          index === 2 ? 'bg-gradient-to-r from-orange-300 to-orange-200 border-2 border-orange-400' :
-          'bg-white border border-gray-200'
-        }`;
-
-        const rank = document.createElement('div');
-        rank.className = 'font-bold text-lg w-8 text-center';
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-        rank.textContent = medal;
-
-        const name = document.createElement('div');
-        name.className = 'flex-1 font-semibold text-gray-800 truncate';
-        name.textContent = entry.name;
-
-        const scoreDisplay = document.createElement('div');
-        scoreDisplay.className = 'text-right';
-        
-        const scoreText = document.createElement('div');
-        scoreText.className = 'font-bold text-lg text-purple-600';
-        scoreText.textContent = `${entry.score}/10`;
-        
-        const timeText = document.createElement('div');
-        timeText.className = 'text-xs text-gray-500';
-        const totalTime = entry.total_time || 0;
-        const minutes = Math.floor(totalTime / 60);
-        const seconds = totalTime % 60;
-        timeText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        scoreDisplay.appendChild(scoreText);
-        scoreDisplay.appendChild(timeText);
-
-        entryDiv.appendChild(rank);
-        entryDiv.appendChild(name);
-        entryDiv.appendChild(scoreDisplay);
-
-        container.appendChild(entryDiv);
-      });
-    }
-
-    // Display detailed results
     function displayDetailedResults() {
       const container = document.getElementById('results-overview');
       container.innerHTML = '';
@@ -595,11 +502,11 @@ try {
 
         const imageDiv = document.createElement('div');
         imageDiv.className = 'flex-shrink-0 w-16 h-16 bg-white rounded-lg flex items-center justify-center p-1';
-        imageDiv.innerHTML = `<img src="${result.imageUrl}" alt="${result.correctAnswer}" class="w-full h-full object-contain rounded" onerror="this.src=''; this.alt='Image failed to load'; this.style.display='none';">`;
+        imageDiv.innerHTML = `<img src="${result.imageUrl}" alt="${result.correctAnswer}" class="w-full h-full object-contain rounded" onerror="this.style.display='none';">`;
 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'flex-1 min-w-0';
-        
+
         const roundLabel = document.createElement('div');
         roundLabel.className = 'font-bold text-gray-800 text-sm';
         roundLabel.textContent = `Round ${result.round} (${result.timeTaken}s)`;
@@ -614,12 +521,12 @@ try {
           answerInfo.innerHTML = `❌ Your answer: <span class="font-semibold">${result.userAnswer}</span> | Correct: <span class="font-semibold">${result.correctAnswer}</span>`;
         }
 
-        infoDiv.appendChild(roundLabel);
-        infoDiv.appendChild(answerInfo);
-
         const statusIcon = document.createElement('div');
         statusIcon.className = 'flex-shrink-0 text-2xl';
         statusIcon.textContent = result.isCorrect ? '✅' : '❌';
+
+        infoDiv.appendChild(roundLabel);
+        infoDiv.appendChild(answerInfo);
 
         resultDiv.appendChild(imageDiv);
         resultDiv.appendChild(infoDiv);
@@ -629,48 +536,33 @@ try {
       });
     }
 
-    // Share results
     function shareResults() {
-      let shareText = `🎯 Guess The Image Game\n\nFinal Score: ${score}/10\n\n`;
-      
-      gameResults.forEach((result) => {
-        shareText += `Round ${result.round}: ${result.isCorrect ? '✅' : '❌'} (${result.timeTaken}s)\n`;
+      let shareText = `🎯 Who's That Pokémon?\n\nFinal Score: ${score}/10\n\n`;
+      gameResults.forEach((r) => {
+        shareText += `Round ${r.round}: ${r.isCorrect ? '✅' : '❌'} (${r.timeTaken}s)\n`;
       });
 
-      const totalTime = roundTimes.reduce((sum, time) => sum + time, 0);
+      const totalTime = roundTimes.reduce((sum, t) => sum + t, 0);
       const minutes = Math.floor(totalTime / 60);
       const seconds = totalTime % 60;
       shareText += `\nTotal Time: ${minutes}:${seconds.toString().padStart(2, '0')}\nCan you beat my score?`;
 
-      // Try to use native share if available
       if (navigator.share) {
-        navigator.share({
-          title: 'Guess The Image - My Results',
-          text: shareText
-        }).catch(() => {
-          // If share fails, copy to clipboard
-          copyToClipboard(shareText);
-        });
+        navigator.share({ title: "Who's That Pokémon?", text: shareText }).catch(() => copyToClipboard(shareText));
       } else {
-        // Fallback to clipboard
         copyToClipboard(shareText);
       }
     }
 
-    // Copy to clipboard
     function copyToClipboard(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          showToast('Results copied to clipboard! 📋');
-        }).catch(() => {
-          fallbackCopy(text);
-        });
+        navigator.clipboard.writeText(text).then(() => showToast('Results copied to clipboard! 📋'))
+          .catch(() => fallbackCopy(text));
       } else {
         fallbackCopy(text);
       }
     }
 
-    // Fallback copy method
     function fallbackCopy(text) {
       const textarea = document.createElement('textarea');
       textarea.value = text;
@@ -687,36 +579,20 @@ try {
       document.body.removeChild(textarea);
     }
 
-    // Show toast message
     function showToast(message) {
       const toast = document.createElement('div');
       toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg z-50';
       toast.textContent = message;
       document.body.appendChild(toast);
-      
+
       setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 300);
+        setTimeout(() => document.body.removeChild(toast), 300);
       }, 2500);
     }
 
-    // Restart game
-    function restartGame() {
-      startGame();
-    }
-
-    // Render UI based on config
-    async function onConfigChange(cfg) {
-      config = { ...defaultConfig, ...cfg };
-      
-      document.getElementById('title-text').textContent = config.game_title || defaultConfig.game_title;
-      document.getElementById('start-btn').textContent = config.start_button_text || defaultConfig.start_button_text;
-      document.getElementById('timer-label-text').textContent = config.timer_label || defaultConfig.timer_label;
-    }
-
+    function restartGame() { startGame(); }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9bd8ba93b429e767',t:'MTc2ODM0NzUyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
