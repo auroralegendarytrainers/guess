@@ -207,14 +207,14 @@
     const gameData = [
       { shadowUrl: "images/ivysaur_shadow.png",      revealUrl: "images/ivysaur_real.png",      answers: ["ivysaur"] },
       { shadowUrl: "images/arceus_shadow.png",       revealUrl: "images/arceus_real.png",       answers: ["arceus"] },
-      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuffball"] },
-      { shadowUrl: "images/sphealscarf_shadow.png",  revealUrl: "images/sphealscarf_real.png",  answers: ["spheal with a scarf", "spheal costume", "spheal wearing a scarf", "sphealscarf"] },
+      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuff ball", "jigglypuff"] },
+      { shadowUrl: "images/sphealscarf_shadow.png",  revealUrl: "images/sphealscarf_real.png",  answers: ["spheal with a scarf", "spheal costume", "spheal wearing a scarf", "spheal scarf", "spheal"] },
       { shadowUrl: "images/wattrell_shadow.png",     revealUrl: "images/wattrell_real.png",     answers: ["wattrel", "wattrell"] },
       { shadowUrl: "images/treecko_shadow.png",      revealUrl: "images/treecko_real.png",      answers: ["treecko"] },
       { shadowUrl: "images/sawsbuck_shadow.png",     revealUrl: "images/sawsbuck_real.png",     answers: ["sawsbuck"] },
       { shadowUrl: "images/feebas_shadow.png",       revealUrl: "images/feebas_real.png",       answers: ["feebas"] },
       { shadowUrl: "images/megablaziken_shadow.png", revealUrl: "images/megablaziken_real.png", answers: ["mega blaziken", "blaziken", "megablaziken"] },
-      { shadowUrl: "images/gmaxmachamp_shadow.png",  revealUrl: "images/gmaxmachamp_real.png",  answers: ["gigantamax machamp", "gmax machamp", "machamp", "g-max machamp", "gmaxmachamp"] }
+      { shadowUrl: "images/gmaxmachamp_shadow.png",  revealUrl: "images/gmaxmachamp_real.png",  answers: ["gigantamax machamp", "gmax machamp", "machamp", "g-max machamp", "gigantamax machamp"] }
     ];
 
     function displayName(roundData) {
@@ -446,50 +446,60 @@
       displayDetailedResults();
     }
 
-    async function saveScore(event) {
-      event.preventDefault();
-      if (isSaving) return;
+   async function saveScore(event) {
+  event.preventDefault();
+  if (isSaving) return;
 
-      const playerName = document.getElementById('player-name').value.trim();
-      if (!playerName) return;
-
-      isSaving = true;
-      const btn = document.getElementById('save-score-btn');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
-
-      const totalTime = roundTimes.reduce((sum, t) => sum + t, 0);
-
-      const scoreData = {
-        name: playerName,
-        score,
-        total_time: totalTime,
-        timestamp: Date.now()
-      };
+  const playerName = document.getElementById("player-name").value.trim();
+  if (!playerName) return;
 
   const GOOGLE_SHEETS_WEBAPP_URL =
-  "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
+    "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
 
-try {
-  await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-    method: "POST",
-    mode: "no-cors", // IMPORTANT: prevents CORS blocking from GitHub Pages
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // IMPORTANT: avoids preflight
-    body: JSON.stringify(scoreData),
-  });
+  isSaving = true;
 
-  // With no-cors, we can't read the response. If fetch doesn't throw, assume it worked.
-  document.getElementById("save-feedback").textContent = "✅ Score saved!";
-  document.getElementById("save-feedback").className =
-    "mt-2 text-center text-sm font-semibold text-green-600";
-  document.getElementById("save-score-section").style.display = "none";
-} catch (err) {
-  document.getElementById("save-feedback").textContent =
-    "❌ Failed to save. Try again!";
-  document.getElementById("save-feedback").className =
-    "mt-2 text-center text-sm font-semibold text-red-600";
-  document.getElementById("save-score-btn").disabled = false;
-  document.getElementById("save-score-btn").textContent = "Save";
+  const btn = document.getElementById("save-score-btn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  const totalTime = roundTimes.reduce((sum, t) => sum + t, 0);
+
+  const scoreData = {
+    name: playerName,
+    score,
+    timestamp: Date.now(),
+    total_time: totalTime,
+  };
+
+  for (let i = 0; i < gameData.length; i++) {
+    scoreData[`round_${i + 1}_time`] = roundTimes[i] ?? 15;
+  }
+
+  try {
+    await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(scoreData),
+    });
+
+    document.getElementById("save-feedback").textContent = "✅ Score saved!";
+    document.getElementById("save-feedback").className =
+      "mt-2 text-center text-sm font-semibold text-green-600";
+    document.getElementById("save-score-section").style.display = "none";
+  } catch (err) {
+    console.error("SAVE ERROR:", err);
+
+    document.getElementById("save-feedback").textContent =
+      "❌ Failed to save. Try again!";
+    document.getElementById("save-feedback").className =
+      "mt-2 text-center text-sm font-semibold text-red-600";
+
+    btn.disabled = false;
+    btn.textContent = "Save";
+  } finally {
+    isSaving = false;
+  }
 }
 
 
