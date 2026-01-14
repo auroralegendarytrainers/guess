@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Guess The Image</title>
+  <title>Who's That Pokemon?</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
@@ -147,7 +147,7 @@
   <script>
     // Default configuration
     const defaultConfig = {
-      game_title: "Guess The Image!",
+      game_title: "Who's That Pokemon?",
       start_button_text: "Start Game",
       timer_label: "Time Left:",
       background_color: "#667eea",
@@ -175,55 +175,28 @@
     // Replace these placeholder URLs with your actual image URLs
     const gameData = [
       {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+1",
-        revealUrl: "https://via.placeholder.com/300x300/FFD93D/333333?text=Smiley+Face",
-        answer: "Smiley Face"
+        shadowUrl: "images/ivysaur_shadow.png",
+        revealUrl: "images/ivysaur_real.png",
+        answer: "Ivysaur"
       },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+2",
-        revealUrl: "https://via.placeholder.com/300x300/FFD700/333333?text=Star",
-        answer: "Star"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+3",
-        revealUrl: "https://via.placeholder.com/300x300/FF6B6B/333333?text=Heart",
-        answer: "Heart"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+4",
-        revealUrl: "https://via.placeholder.com/300x300/4A90D9/333333?text=Phone",
-        answer: "Phone"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+5",
-        revealUrl: "https://via.placeholder.com/300x300/228B22/333333?text=Tree",
-        answer: "Christmas Tree"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+6",
-        revealUrl: "https://via.placeholder.com/300x300/FF6347/333333?text=Apple",
-        answer: "Apple"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+7",
-        revealUrl: "https://via.placeholder.com/300x300/87CEEB/333333?text=House",
-        answer: "House"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+8",
-        revealUrl: "https://via.placeholder.com/300x300/1E90FF/333333?text=Earth",
-        answer: "Earth"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+9",
-        revealUrl: "https://via.placeholder.com/300x300/F4A460/333333?text=Cookie",
-        answer: "Cookie"
-      },
-      {
-        shadowUrl: "https://via.placeholder.com/300x300/000000/000000?text=Shadow+10",
-        revealUrl: "https://via.placeholder.com/300x300/4169E1/333333?text=Coffee",
-        answer: "Coffee Cup"
-      }
+     { shadowUrl: "images/arceus_shadow.png", revealUrl: "images/arceus_real.png", answer: "Arceus" },
+
+      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answer: "Jigglypuff Beach ball" },
+
+{ shadowUrl: "images/sphealscarf_shadow.png", revealUrl: "images/sphealscarf_real.png", answer: "Spheal With a Scarf", "Spheal Costume", "Spheal Wearing a Scarf" },
+
+{ shadowUrl: "images/wattrell_shadow.png", revealUrl: "images/wattrell_real.png", answer: "Wattrel" },
+
+{ shadowUrl: "images/treecko_shadow.png", revealUrl: "images/treecko_real.png", answer: "Treecko" },
+
+{ shadowUrl: "images/sawsbuck_shadow.png", revealUrl: "images/sawsbuck_real.png", answer: "Sawsbuck" },
+
+{ shadowUrl: "images/feebas_shadow.png", revealUrl: "images/feebas_real.png", answer: "Feebas" },
+
+{ shadowUrl: "images/megablaziken_shadow.png", revealUrl: "images/megablaziken_real.png", answer: "Mega Blaziken", "Blaziken" },
+
+{ shadowUrl: "images/gmaxmachamp_shadow.png", revealUrl: "images/gmaxmachamp_real.png", answer: "Gigantamax Machamp", "GMax Machamp", "Machamp" }
+
     ];
 
     // Initialize Data SDK
