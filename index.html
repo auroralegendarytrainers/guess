@@ -167,14 +167,19 @@
             <div id="save-feedback" class="mt-2 text-center text-sm font-semibold"></div>
           </div>
 
-          <!-- ✅ Leaderboard -->
+          <!-- ✅ Leaderboard (Website) -->
           <div class="mb-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">🏆 Leaderboard</h3>
-            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-300">
-              <div id="leaderboard-status" class="text-center text-gray-500 py-2 text-sm"></div>
-              <div id="leaderboard-list" class="space-y-2">
-                <!-- entries inserted here -->
-              </div>
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">🏆 Leaderboard</h3>
+              <button id="refresh-leaderboard-btn" onclick="loadLeaderboard(true)"
+                class="text-sm font-semibold px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+                Refresh
+              </button>
+            </div>
+
+            <div id="leaderboard-container" class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-300 max-h-96 overflow-y-auto">
+              <div id="leaderboard-status" class="text-center text-gray-500 py-3">Loading…</div>
+              <div id="leaderboard-list" class="space-y-2 hidden"></div>
             </div>
           </div>
 
@@ -201,8 +206,7 @@
 
   <script>
     // ✅ Your Google Apps Script Web App URL
-    const GOOGLE_SHEETS_WEBAPP_URL =
-      "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
+    const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
 
     // Game state
     let currentRound = 0;
@@ -214,15 +218,16 @@
     let isSaving = false;
     let roundStartTime = 0;
     let roundTimes = [];
+    let leaderboardData = [];
 
     // ✅ Game data (shadow + reveal + multiple accepted answers)
     const gameData = [
       { shadowUrl: "images/ivysaur_shadow.png",        revealUrl: "images/ivysaur_real.png",        answers: ["ivysaur"] },
       { shadowUrl: "images/arceus_shadow.png",         revealUrl: "images/arceus_real.png",         answers: ["arceus"] },
-      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuff", "beach ball jigglypuff"] },
+      { shadowUrl: "images/jigglypuffball_shadow.png", revealUrl: "images/jigglypuffball_real.png", answers: ["jigglypuff beach ball", "jigglypuff ball", "jigglypuff"] },
       { shadowUrl: "images/sphealscarf_shadow.png",    revealUrl: "images/sphealscarf_real.png",    answers: ["spheal with a scarf", "spheal costume", "spheal wearing a scarf", "spheal scarf", "spheal"] },
       { shadowUrl: "images/wattrell_shadow.png",       revealUrl: "images/wattrell_real.png",       answers: ["wattrel", "wattrell"] },
-      { shadowUrl: "images/treecko_shadow.png",        revealUrl: "images/trecko_real.png",        answers: ["treecko"] },
+      { shadowUrl: "images/treecko_shadow.png",        revealUrl: "images/trecko_real.png",         answers: ["treecko"] },
       { shadowUrl: "images/sawsbuck_shadow.png",       revealUrl: "images/sawsbuck_real.png",       answers: ["sawsbuck"] },
       { shadowUrl: "images/feebas_shadow.png",         revealUrl: "images/feebas_real.png",         answers: ["feebas"] },
       { shadowUrl: "images/megablaziken_shadow.png",   revealUrl: "images/megablaziken_real.png",   answers: ["mega blaziken", "blaziken", "megablaziken"] },
@@ -231,7 +236,7 @@
 
     function displayName(roundData) {
       const raw = roundData.answers[0] || "";
-      return raw.split(" ").map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+      return raw.split(" ").map(w => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
     }
 
     function normalize(s) {
@@ -241,43 +246,110 @@
         .replace(/\s+/g, " ");
     }
 
-    // ---------------------------
-    // ✅ LEADERBOARD (reads from your Web App)
-    // IMPORTANT: Your Apps Script must return JSON on GET, like:
-    // { "success": true, "rows": [ {name:"Madi", score:8, total_time:90, timestamp:...}, ... ] }
-    // ---------------------------
-   async function loadLeaderboard() {
-  try {
-    const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL);
-    const data = await res.json();
-
-    const list = document.getElementById("leaderboard-list");
-    list.innerHTML = "";
-
-    if (!data || !data.length) {
-      list.innerHTML = "<div class='text-center text-gray-500'>No scores yet.</div>";
-      return;
+    function updateScore() {
+      document.getElementById('score').textContent = score;
     }
 
-    data
-      .sort((a, b) => b.score - a.score || a.total_time - b.total_time)
-      .slice(0, 20)
-      .forEach((entry, i) => {
-        const div = document.createElement("div");
-        div.className =
-          "flex justify-between items-center bg-gray-100 rounded-lg p-3";
+    // ✅ Leaderboard: fetch scores from Google Sheet (doGet returns JSON array)
+    async function loadLeaderboard(showStatus = false) {
+      const statusEl = document.getElementById("leaderboard-status");
+      const listEl = document.getElementById("leaderboard-list");
 
-        div.innerHTML = `
-          <div class="font-bold">${i + 1}. ${entry.name}</div>
-          <div class="text-purple-600 font-semibold">${entry.score}/10</div>
-        `;
+      if (showStatus) {
+        statusEl.textContent = "Loading…";
+        statusEl.className = "text-center text-gray-500 py-3";
+        statusEl.style.display = "block";
+        listEl.classList.add("hidden");
+      }
 
-        list.appendChild(div);
+      try {
+        const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, { method: "GET" });
+        const rows = await res.json();
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          statusEl.textContent = "No scores yet. Be the first!";
+          statusEl.className = "text-center text-gray-500 py-3";
+          statusEl.style.display = "block";
+          listEl.classList.add("hidden");
+          leaderboardData = [];
+          return;
+        }
+
+        leaderboardData = rows
+          .map(r => ({
+            name: String(r.name || "").trim(),
+            score: Number(r.score || 0),
+            total_time: Number(r.total_time || 0),
+            timestamp: Number(r.timestamp || 0)
+          }))
+          .filter(r => r.name);
+
+        renderLeaderboard();
+        statusEl.style.display = "none";
+        listEl.classList.remove("hidden");
+      } catch (err) {
+        console.error("LEADERBOARD LOAD ERROR:", err);
+        statusEl.textContent = "Could not load leaderboard.";
+        statusEl.className = "text-center text-red-500 py-3 font-semibold";
+        statusEl.style.display = "block";
+        listEl.classList.add("hidden");
+      }
+    }
+
+    function renderLeaderboard() {
+      const listEl = document.getElementById("leaderboard-list");
+      listEl.innerHTML = "";
+
+      const sorted = [...leaderboardData].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (a.total_time !== b.total_time) return a.total_time - b.total_time; // faster wins ties
+        return b.timestamp - a.timestamp; // newest last tie-break
       });
-  } catch (err) {
-    console.error("Leaderboard load error:", err);
-  }
-}
+
+      sorted.slice(0, 50).forEach((entry, index) => {
+        const row = document.createElement("div");
+        row.className = `flex items-center gap-3 p-3 rounded-lg ${
+          index === 0 ? "bg-gradient-to-r from-yellow-300 to-yellow-200 border-2 border-yellow-400" :
+          index === 1 ? "bg-gradient-to-r from-gray-300 to-gray-200 border-2 border-gray-400" :
+          index === 2 ? "bg-gradient-to-r from-orange-300 to-orange-200 border-2 border-orange-400" :
+          "bg-white border border-gray-200"
+        }`;
+
+        const rank = document.createElement("div");
+        rank.className = "font-bold text-lg w-8 text-center";
+        rank.textContent =
+          index === 0 ? "🥇" :
+          index === 1 ? "🥈" :
+          index === 2 ? "🥉" :
+          `${index + 1}.`;
+
+        const name = document.createElement("div");
+        name.className = "flex-1 font-semibold text-gray-800 truncate";
+        name.textContent = entry.name;
+
+        const right = document.createElement("div");
+        right.className = "text-right";
+
+        const scoreText = document.createElement("div");
+        scoreText.className = "font-bold text-lg text-purple-600";
+        scoreText.textContent = `${entry.score}/10`;
+
+        const timeText = document.createElement("div");
+        timeText.className = "text-xs text-gray-500";
+        const minutes = Math.floor(entry.total_time / 60);
+        const seconds = entry.total_time % 60;
+        timeText.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+
+        right.appendChild(scoreText);
+        right.appendChild(timeText);
+
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(right);
+
+        listEl.appendChild(row);
+      });
+    }
 
     // Start game
     function startGame() {
@@ -295,7 +367,6 @@
       loadRound();
     }
 
-    // Load round
     function loadRound() {
       if (currentRound >= gameData.length) {
         endGame();
@@ -465,10 +536,6 @@
       }, 2000);
     }
 
-    function updateScore() {
-      document.getElementById('score').textContent = score;
-    }
-
     function endGame() {
       clearInterval(timerInterval);
 
@@ -492,10 +559,11 @@
       document.getElementById('save-score-section').style.display = 'block';
 
       displayDetailedResults();
-      loadLeaderboard(); // ✅ show leaderboard when results open
+
+      // ✅ Load leaderboard whenever results screen opens
+      loadLeaderboard(true);
     }
 
-    // ✅ Save score to Google Sheet
     async function saveScore(event) {
       event.preventDefault();
       if (isSaving) return;
@@ -522,49 +590,29 @@
         scoreData[`round_${i + 1}_time`] = roundTimes[i] ?? 15;
       }
 
-      // We try a normal CORS POST first (best).
-      // If your Apps Script doesn't return CORS headers, we fall back to no-cors and still show success.
       try {
-        let saved = false;
+        const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(scoreData),
+        });
 
-        try {
-          const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(scoreData),
-          });
+        // If your Apps Script returns JSON, this will work.
+        // If it returns nothing, we still treat it as success when res.ok is true.
+        let json = null;
+        try { json = await res.json(); } catch (_) {}
 
-          // If it returns JSON, great:
-          const json = await res.json().catch(() => null);
-          if (res.ok && (json?.success === true || json?.ok === true || json)) {
-            saved = true;
-          }
-        } catch (corsErr) {
-          // fallback below
-        }
+        if (!res.ok) throw new Error("Request failed");
+        if (json && json.success !== true) throw new Error("Save not acknowledged");
 
-        if (!saved) {
-          // fallback (no-cors). You cannot read response, but it will still POST.
-          await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(scoreData),
-          });
-          saved = true;
-        }
+        document.getElementById("save-feedback").textContent = "✅ Score saved!";
+        document.getElementById("save-feedback").className =
+          "mt-2 text-center text-sm font-semibold text-green-600";
+        document.getElementById("save-score-section").style.display = "none";
 
-        if (saved) {
-          document.getElementById("save-feedback").textContent = "✅ Score saved!";
-          document.getElementById("save-feedback").className =
-            "mt-2 text-center text-sm font-semibold text-green-600";
-          document.getElementById("save-score-section").style.display = "none";
+        // ✅ Refresh leaderboard after save
+        await loadLeaderboard(true);
 
-          // ✅ refresh leaderboard after saving
-          await loadLeaderboard();
-        } else {
-          throw new Error("Save failed");
-        }
       } catch (err) {
         console.error("SAVE ERROR:", err);
 
@@ -683,6 +731,9 @@
     }
 
     function restartGame() { startGame(); }
+
+    // Optional: pre-load leaderboard when page loads (will show once results screen opens)
+    // window.addEventListener("DOMContentLoaded", () => loadLeaderboard(false));
   </script>
 </body>
 </html>
