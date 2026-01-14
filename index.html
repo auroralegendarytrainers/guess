@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Who's That Pokemon?</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
     body {
@@ -198,24 +196,6 @@
 { shadowUrl: "images/gmaxmachamp_shadow.png", revealUrl: "images/gmaxmachamp_real.png", answer: "Gigantamax Machamp", "GMax Machamp", "Machamp" }
 
     ];
-
-    // Initialize Data SDK
-    const dataHandler = {
-      onDataChanged(data) {
-        leaderboardData = data;
-        renderLeaderboard();
-      }
-    };
-
-    // Initialize SDK when ready
-    (async () => {
-      if (window.dataSdk) {
-        const initResult = await window.dataSdk.init(dataHandler);
-        if (!initResult.isOk) {
-          console.error("Failed to initialize data SDK");
-        }
-      }
-    })();
 
     // Start the game
     function startGame() {
@@ -493,7 +473,34 @@
         scoreData[`round_${i + 1}_time`] = roundTimes[i] || 15;
       }
       
-      const result = await window.dataSdk.create(scoreData);
+     const GOOGLE_SHEETS_WEBAPP_URL = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+try {
+  const res = await fetch(https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(scoreData),
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok || json.success !== true) {
+    throw new Error("Google Sheets save failed");
+  }
+
+  document.getElementById("save-feedback").textContent = "✅ Score saved!";
+  document.getElementById("save-feedback").className =
+    "mt-2 text-center text-sm font-semibold text-green-600";
+  document.getElementById("save-score-section").style.display = "none";
+} catch (err) {
+  document.getElementById("save-feedback").textContent =
+    "❌ Failed to save. Try again!";
+  document.getElementById("save-feedback").className =
+    "mt-2 text-center text-sm font-semibold text-red-600";
+  document.getElementById("save-score-btn").disabled = false;
+  document.getElementById("save-score-btn").textContent = "Save";
+}
+
 
       isSaving = false;
       
@@ -710,43 +717,6 @@
       document.getElementById('timer-label-text').textContent = config.timer_label || defaultConfig.timer_label;
     }
 
-    // Initialize Element SDK
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities: (cfg) => ({
-          recolorables: [
-            {
-              get: () => cfg.background_color || defaultConfig.background_color,
-              set: (value) => window.elementSdk.setConfig({ background_color: value })
-            },
-            {
-              get: () => cfg.card_color || defaultConfig.card_color,
-              set: (value) => window.elementSdk.setConfig({ card_color: value })
-            },
-            {
-              get: () => cfg.button_color || defaultConfig.button_color,
-              set: (value) => window.elementSdk.setConfig({ button_color: value })
-            }
-          ],
-          borderables: [],
-          fontEditable: {
-            get: () => cfg.font_family || 'Fredoka',
-            set: (value) => window.elementSdk.setConfig({ font_family: value })
-          },
-          fontSizeable: {
-            get: () => cfg.font_size || 16,
-            set: (value) => window.elementSdk.setConfig({ font_size: value })
-          }
-        }),
-        mapToEditPanelValues: (cfg) => new Map([
-          ["game_title", cfg.game_title || defaultConfig.game_title],
-          ["start_button_text", cfg.start_button_text || defaultConfig.start_button_text],
-          ["timer_label", cfg.timer_label || defaultConfig.timer_label]
-        ])
-      });
-    }
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9bd8ba93b429e767',t:'MTc2ODM0NzUyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
