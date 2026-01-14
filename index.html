@@ -467,28 +467,31 @@
         timestamp: Date.now()
       };
 
-      try {
-        const res = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(scoreData),
-        });
+  const GOOGLE_SHEETS_WEBAPP_URL =
+  "https://script.google.com/macros/s/AKfycbzh-lzyUJgdPfx3Br3WGpm6A1_Nvo8u5OWgEpc_rAvu0oSNBUst8xhPAeGzXIkxOv2Frw/exec";
 
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json.success !== true) throw new Error("Save failed");
+try {
+  await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+    method: "POST",
+    mode: "no-cors", // IMPORTANT: prevents CORS blocking from GitHub Pages
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // IMPORTANT: avoids preflight
+    body: JSON.stringify(scoreData),
+  });
 
-        document.getElementById('save-feedback').textContent = '✅ Score saved!';
-        document.getElementById('save-feedback').className = 'mt-2 text-center text-sm font-semibold text-green-600';
-        document.getElementById('save-score-section').style.display = 'none';
-      } catch (err) {
-        document.getElementById('save-feedback').textContent = '❌ Failed to save. Try again!';
-        document.getElementById('save-feedback').className = 'mt-2 text-center text-sm font-semibold text-red-600';
-        btn.disabled = false;
-        btn.textContent = 'Save';
-      } finally {
-        isSaving = false;
-      }
-    }
+  // With no-cors, we can't read the response. If fetch doesn't throw, assume it worked.
+  document.getElementById("save-feedback").textContent = "✅ Score saved!";
+  document.getElementById("save-feedback").className =
+    "mt-2 text-center text-sm font-semibold text-green-600";
+  document.getElementById("save-score-section").style.display = "none";
+} catch (err) {
+  document.getElementById("save-feedback").textContent =
+    "❌ Failed to save. Try again!";
+  document.getElementById("save-feedback").className =
+    "mt-2 text-center text-sm font-semibold text-red-600";
+  document.getElementById("save-score-btn").disabled = false;
+  document.getElementById("save-score-btn").textContent = "Save";
+}
+
 
     function displayDetailedResults() {
       const container = document.getElementById('results-overview');
